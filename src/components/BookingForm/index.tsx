@@ -16,7 +16,6 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
     const [resources, setResources] = useState<Resource[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-    // const { toast } = useToast();
 
     useEffect(() => {
         loadResources();
@@ -60,10 +59,10 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
                 throw new Error(data.message || 'Booking failed');
             }
 
+            onBookingCreated(); // Notify parent component of new booking
             // Success: booking created
             alert('Booking successful!');
-            // setFormSuccess(true); // optional state if you want to show success
-            // optionally reset form
+
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             setError(err.message || 'Something went wrong');
@@ -74,14 +73,15 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
 
     const getDefaultStartTime = () => {
         const now = new Date();
-        return now.toLocaleString('sv-SE').replace(' ', 'T').slice(0, 16);
+        return now.toISOString().slice(0, 16);
     };
 
     const getDefaultEndTime = () => {
         const now = new Date();
         now.setHours(now.getHours() + 1); // Default 1 hour duration
-        return now.toLocaleString('sv-SE').replace(' ', 'T').slice(0, 16);
+        return now.toISOString().slice(0, 16);
     };
+
 
     return (
         <Card className="w-full max-w-2xl">

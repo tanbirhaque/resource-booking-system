@@ -1,7 +1,7 @@
 import { Booking, bookingApi, Resource } from "@/lib/booking-api";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
-import { AlertCircle, Calendar, Clock, Filter, MapPin, RefreshCw, Trash2, User } from "lucide-react";
+import { AlertCircle, Calendar, Clock, Filter, MapPin, RefreshCw, User } from "lucide-react";
 import { Button } from "../ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Input } from "../ui/input";
@@ -17,7 +17,7 @@ interface BookingDashboardProps {
 const ViewBookings = ({ refreshTrigger }: BookingDashboardProps) => {
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [resources, setResources] = useState<Resource[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [filters, setFilters] = useState({
         resource: '',
         date: '',
@@ -25,60 +25,34 @@ const ViewBookings = ({ refreshTrigger }: BookingDashboardProps) => {
     // const { toast } = useToast();
 
     useEffect(() => {
-        loadData();
-    }, [refreshTrigger]);
+        setLoading(true);
+        const fetchBookings = async () => {
+            const queryParams = new URLSearchParams();
+
+            if (filters.resource) queryParams.append('resourceId', filters.resource);
+            if (filters.date) queryParams.append('date', filters.date);
+
+            const res = await fetch(`/api/bookings?${queryParams.toString()}`);
+            const data = await res.json();
+
+            console.log('Fetched filtered bookings:', data);
+            setBookings(data);
+            setLoading(false);
+        };
+
+        fetchBookings();
+    }, [filters, refreshTrigger]);
 
     useEffect(() => {
-        loadBookings();
-    }, [filters]);
-
-    const loadData = async () => {
-        await Promise.all([loadResources(), loadBookings()]);
-    };
+        loadResources();
+    }, []);
 
     const loadResources = async () => {
         try {
             const resourceList = await bookingApi.getResources();
             setResources(resourceList);
-        } catch (error) {
-            console.error('Failed to load resources:', error);
-        }
-    };
-
-    const loadBookings = async () => {
-        setLoading(true);
-        try {
-            const bookingList = await bookingApi.getBookings(filters.resource || filters.date ? filters : undefined);
-            setBookings(bookingList);
-        } catch (error) {
-            console.error('Failed to load bookings:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleDeleteBooking = async (bookingId: string, resourceName: string) => {
-        try {
-            const result = await bookingApi.deleteBooking(bookingId);
-            if (result.success) {
-                // toast({
-                //     title: "Booking Cancelled",
-                //     description: `Cancelled booking for ${resourceName}`,
-                // });
-                loadBookings();
-            } else {
-                // toast({
-                //     title: "Error",
-                //     description: result.error || "Failed to cancel booking",
-                //     variant: "destructive",
-                // });
-            }
-        } catch (error) {
-            // toast({
-            //     title: "Error",
-            //     description: "An unexpected error occurred",
-            //     variant: "destructive",
-            // });
+        } catch (err) {
+            console.error('Failed to load resources:', err);
         }
     };
 
@@ -95,17 +69,50 @@ const ViewBookings = ({ refreshTrigger }: BookingDashboardProps) => {
             hour12: true,
         });
     };
+
     // Group bookings by resource
     const groupedBookings = bookings.reduce((acc, booking) => {
         if (!acc[booking.resourceId]) {
             acc[booking.resourceId] = {
-                resourceName: booking.resourceName,
+                resourceName: resources.find(r => r.id === booking.resourceId)?.name || 'Unknown Resource',
                 bookings: []
             };
         }
         acc[booking.resourceId].bookings.push(booking);
         return acc;
     }, {} as Record<string, { resourceName: string; bookings: Booking[] }>);
+
+    // Determine booking status
+    const getBookingStatus = (startTime: string, endTime: string): "Upcoming" | "Ongoing" | "Past" => {
+        const now = new Date();
+        const start = new Date(startTime);
+        const end = new Date(endTime);
+
+        if (now < start) return "Upcoming";
+        if (now > end) return "Past";
+        return "Ongoing";
+    };
+
+    const getStatusBadge = (booking: Booking) => {
+        const status = getBookingStatus(booking.startTime, booking.endTime);
+        const variants: Record<"Upcoming" | "Ongoing" | "Past", "default" | "secondary" | "outline"> = {
+            Upcoming: 'default',
+            Ongoing: 'secondary',
+            Past: 'outline'
+        };
+
+        const colors: Record<"Upcoming" | "Ongoing" | "Past", string> = {
+            Upcoming: 'bg-blue-400 text-white',
+            Ongoing: 'bg-green-400 text-white',
+            Past: 'bg-gray-400 text-white'
+        };
+
+        return (
+            <Badge variant={variants[status]} className={colors[status]}>
+                {status}
+            </Badge>
+        );
+    };
 
     return (
         <div className="w-full max-w-6xl space-y-6">
@@ -122,10 +129,10 @@ const ViewBookings = ({ refreshTrigger }: BookingDashboardProps) => {
                                 Manage and view all resource bookings
                             </CardDescription>
                         </div>
-                        <Button onClick={loadBookings} variant="outline" size="sm">
+                        {/* <Button onClick={loadBookings} variant="outline" size="sm">
                             <RefreshCw className="h-4 w-4 mr-2" />
                             Refresh
-                        </Button>
+                        </Button> */}
                     </div>
                 </CardHeader>
 
@@ -223,19 +230,20 @@ const ViewBookings = ({ refreshTrigger }: BookingDashboardProps) => {
                                                     <User className="h-4 w-4 text-muted-foreground" />
                                                     <span className="text-muted-foreground">{booking.requestedBy}</span>
                                                 </div>
+                                                {getStatusBadge(booking)}
                                             </div>
 
-                                            <div className="flex items-center gap-2 mt-3 md:mt-0">
+                                            {/* <div className="flex items-center gap-2 mt-3 md:mt-0">
                                                 <Button
                                                     variant="outline"
                                                     size="sm"
-                                                    onClick={() => handleDeleteBooking(booking.id, booking.resourceName)}
+                                                    // onClick={() => handleDeleteBooking(booking.id, booking.resourceName)}
                                                     className="text-destructive hover:text-destructive"
                                                 >
                                                     <Trash2 className="h-4 w-4" />
                                                     Cancel
                                                 </Button>
-                                            </div>
+                                            </div> */}
                                         </div>
                                     ))}
                                 </div>

@@ -63,15 +63,17 @@ export async function GET(req: NextRequest) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const filters: any = {}
 
+    console.log('Fetching bookings with filters:', { resourceId, date });
+
     if (resourceId) filters.resourceId = resourceId
     if (date) {
-        const startOfDay = new Date(date)
-        const endOfDay = new Date(new Date(date).getTime() + 24 * 60 * 60 * 1000)
+        const startOfDay = new Date(date);
+        const endOfDay = new Date(new Date(date).getTime() + 24 * 60 * 60 * 1000);
 
         filters.startTime = {
             gte: startOfDay,
             lt: endOfDay,
-        }
+        };
     }
 
     const bookings = await prisma.booking.findMany({
