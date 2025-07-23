@@ -1,5 +1,3 @@
-"use client";
-
 import TabsSection from "@/components/TabsSection";
 import { BookOpen, Calendar, Shield } from "lucide-react";
 

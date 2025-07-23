@@ -13,12 +13,6 @@ interface BookingFormProps {
 
 const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
     const [resources, setResources] = useState<Resource[]>([]);
-    const [formData, setFormData] = useState<BookingRequest>({
-        resourceId: '',
-        startTime: '',
-        endTime: '',
-        requestedBy: '',
-    });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     // const { toast } = useToast();
@@ -36,58 +30,63 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
         }
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = async (formData: FormData) => {
+
+        // Convert FormData to BookingRequest object
+        const bookingRequest: BookingRequest = {
+            resourceId: formData.get('resourceId') as string,
+            startTime: formData.get('startTime') as string,
+            endTime: formData.get('endTime') as string,
+            requestedBy: formData.get('requestedBy') as string,
+        }
+
+        console.log(bookingRequest);
         setError('');
         setLoading(true);
 
-        try {
-            const result = await bookingApi.createBooking(formData);
+        // try {
+        //     const result = await bookingApi.createBooking(formData);
 
-            if (result.success) {
-                // toast({
-                //     title: "Booking Created",
-                //     description: `Successfully booked ${result.booking?.resourceName}`,
-                // });
+        //     if (result.success) {
+        //         // toast({
+        //         //     title: "Booking Created",
+        //         //     description: `Successfully booked ${result.booking?.resourceName}`,
+        //         // });
 
-                // Reset form
-                setFormData({
-                    resourceId: '',
-                    startTime: '',
-                    endTime: '',
-                    requestedBy: '',
-                });
+        //         // Reset form
+        //         setFormData({
+        //             resourceId: '',
+        //             startTime: '',
+        //             endTime: '',
+        //             requestedBy: '',
+        //         });
 
-                // onBookingCreated();
-            } else {
-                setError(result.error || 'Failed to create booking');
-            }
-        } catch (err) {
-            setError('An unexpected error occurred');
-            console.error('Booking error:', err);
-        } finally {
-            setLoading(false);
-        }
+        //         // onBookingCreated();
+        //     } else {
+        //         setError(result.error || 'Failed to create booking');
+        //     }
+        // } catch (err) {
+        //     setError('An unexpected error occurred');
+        //     console.error('Booking error:', err);
+        // } finally {
+        //     setLoading(false);
+        // }
     };
 
-    const handleInputChange = (field: keyof BookingRequest, value: string) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
-        if (error) setError(''); // Clear error when user starts typing
-    };
+    // const handleInputChange = (field: keyof BookingRequest, value: string) => {
+    //     setFormData(prev => ({ ...prev, [field]: value }));
+    //     if (error) setError(''); // Clear error when user starts typing
+    // };
 
-    // Generate default datetime values (current time rounded to next 15 minutes)
     const getDefaultStartTime = () => {
         const now = new Date();
-        const minutes = Math.ceil(now.getMinutes() / 15) * 15;
-        now.setMinutes(minutes, 0, 0);
-        return now.toISOString().slice(0, 16);
+        return now.toLocaleString('sv-SE').replace(' ', 'T').slice(0, 16);
     };
 
     const getDefaultEndTime = () => {
         const now = new Date();
-        const minutes = Math.ceil(now.getMinutes() / 15) * 15;
-        now.setMinutes(minutes + 60, 0, 0); // Default 1 hour duration
-        return now.toISOString().slice(0, 16);
+        now.setHours(now.getHours() + 1); // Default 1 hour duration
+        return now.toLocaleString('sv-SE').replace(' ', 'T').slice(0, 16);
     };
 
     return (
@@ -103,7 +102,11 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
             </CardHeader>
 
             <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form
+                    // onSubmit={handleSubmit}
+                    action={handleSubmit}
+                    className="space-y-6"
+                >
                     {/* {error && (
                         <Alert variant="destructive">
                             <AlertDescription>{error}</AlertDescription>
@@ -117,8 +120,7 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
                             Resource
                         </Label>
                         <Select
-                            value={formData.resourceId}
-                            onValueChange={(value) => handleInputChange('resourceId', value)}
+                            name="resourceId"
                         >
                             <SelectTrigger>
                                 <SelectValue placeholder="Select a resource to book" />
@@ -146,8 +148,10 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
                             <Input
                                 id="startTime"
                                 type="datetime-local"
-                                value={formData.startTime || getDefaultStartTime()}
-                                onChange={(e) => handleInputChange('startTime', e.target.value)}
+                                name="startTime"
+                                defaultValue={getDefaultStartTime()}
+                                // value={formData.startTime || getDefaultStartTime()}
+                                // onChange={(e) => handleInputChange('startTime', e.target.value)}
                                 required
                             />
                         </div>
@@ -160,8 +164,10 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
                             <Input
                                 id="endTime"
                                 type="datetime-local"
-                                value={formData.endTime || getDefaultEndTime()}
-                                onChange={(e) => handleInputChange('endTime', e.target.value)}
+                                name="endTime"
+                                defaultValue={getDefaultEndTime()}
+                                // value={formData.endTime || getDefaultEndTime()}
+                                // onChange={(e) => handleInputChange('endTime', e.target.value)}
                                 required
                             />
                         </div>
@@ -176,9 +182,10 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
                         <Input
                             id="requestedBy"
                             type="text"
+                            name="requestedBy"
                             placeholder="Enter your name or team"
-                            value={formData.requestedBy}
-                            onChange={(e) => handleInputChange('requestedBy', e.target.value)}
+                            // value={formData.requestedBy}
+                            // onChange={(e) => handleInputChange('requestedBy', e.target.value)}
                             required
                         />
                     </div>
@@ -186,7 +193,7 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
                     {/* Submit Button */}
                     <Button
                         type="submit"
-                        disabled={loading || !formData.resourceId || !formData.requestedBy}
+                        // disabled={loading || !formData.resourceId || !formData.requestedBy}
                         className="w-full"
                     >
                         {loading ? (

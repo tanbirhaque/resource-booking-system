@@ -1,3 +1,5 @@
+"use client";
+
 import { BookOpen, Calendar } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { useState } from "react";
