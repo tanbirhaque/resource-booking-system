@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { bookingApi, Resource, BookingRequest } from '@/lib/booking-api';
+import { Alert, AlertDescription } from "../ui/alert";
 
 interface BookingFormProps {
     onBookingCreated: () => void;
@@ -44,39 +45,32 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
         setError('');
         setLoading(true);
 
-        // try {
-        //     const result = await bookingApi.createBooking(formData);
+        try {
+            const res = await fetch('/api/bookings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(bookingRequest),
+            });
 
-        //     if (result.success) {
-        //         // toast({
-        //         //     title: "Booking Created",
-        //         //     description: `Successfully booked ${result.booking?.resourceName}`,
-        //         // });
+            const data = await res.json();
 
-        //         // Reset form
-        //         setFormData({
-        //             resourceId: '',
-        //             startTime: '',
-        //             endTime: '',
-        //             requestedBy: '',
-        //         });
+            if (!res.ok) {
+                throw new Error(data.message || 'Booking failed');
+            }
 
-        //         // onBookingCreated();
-        //     } else {
-        //         setError(result.error || 'Failed to create booking');
-        //     }
-        // } catch (err) {
-        //     setError('An unexpected error occurred');
-        //     console.error('Booking error:', err);
-        // } finally {
-        //     setLoading(false);
-        // }
+            // Success: booking created
+            alert('Booking successful!');
+            // setFormSuccess(true); // optional state if you want to show success
+            // optionally reset form
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (err: any) {
+            setError(err.message || 'Something went wrong');
+        } finally {
+            setLoading(false);
+        }
     };
-
-    // const handleInputChange = (field: keyof BookingRequest, value: string) => {
-    //     setFormData(prev => ({ ...prev, [field]: value }));
-    //     if (error) setError(''); // Clear error when user starts typing
-    // };
 
     const getDefaultStartTime = () => {
         const now = new Date();
@@ -107,11 +101,11 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
                     action={handleSubmit}
                     className="space-y-6"
                 >
-                    {/* {error && (
+                    {error && (
                         <Alert variant="destructive">
                             <AlertDescription>{error}</AlertDescription>
                         </Alert>
-                    )} */}
+                    )}
 
                     {/* Resource Selection */}
                     <div className="space-y-2">
@@ -150,8 +144,6 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
                                 type="datetime-local"
                                 name="startTime"
                                 defaultValue={getDefaultStartTime()}
-                                // value={formData.startTime || getDefaultStartTime()}
-                                // onChange={(e) => handleInputChange('startTime', e.target.value)}
                                 required
                             />
                         </div>
@@ -166,8 +158,6 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
                                 type="datetime-local"
                                 name="endTime"
                                 defaultValue={getDefaultEndTime()}
-                                // value={formData.endTime || getDefaultEndTime()}
-                                // onChange={(e) => handleInputChange('endTime', e.target.value)}
                                 required
                             />
                         </div>
@@ -184,8 +174,6 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
                             type="text"
                             name="requestedBy"
                             placeholder="Enter your name or team"
-                            // value={formData.requestedBy}
-                            // onChange={(e) => handleInputChange('requestedBy', e.target.value)}
                             required
                         />
                     </div>
@@ -193,7 +181,6 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
                     {/* Submit Button */}
                     <Button
                         type="submit"
-                        // disabled={loading || !formData.resourceId || !formData.requestedBy}
                         className="w-full"
                     >
                         {loading ? (
