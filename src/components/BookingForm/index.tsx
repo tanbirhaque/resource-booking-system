@@ -30,13 +30,39 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
         }
     };
 
+    // Utility: Convert a Date to local ISO string (for <input type="datetime-local" />)
+    const toLocalISOString = (date: Date) => {
+        const offset = date.getTimezoneOffset();
+        const localDate = new Date(date.getTime() - offset * 60000);
+        return localDate.toISOString().slice(0, 16); // Format: YYYY-MM-DDTHH:mm
+    };
+
+    // Utility: Convert local ISO (input value) to UTC ISO string for backend
+    const toUTCISOString = (localISO: string) => {
+        const localDate = new Date(localISO);
+        return new Date(localDate.getTime() - localDate.getTimezoneOffset() * 60000).toISOString();
+    };
+
+    // Default times for form
+    const getDefaultStartTime = () => toLocalISOString(new Date());
+
+    const getDefaultEndTime = () => {
+        const end = new Date();
+        end.setHours(end.getHours() + 1);
+        return toLocalISOString(end);
+    };
+
+
     const handleSubmit = async (formData: FormData) => {
+        // Fix time format:
+        const startTime = toUTCISOString(formData.get('startTime') as string);
+        const endTime = toUTCISOString(formData.get('endTime') as string);
 
         // Convert FormData to BookingRequest object
         const bookingRequest: BookingRequest = {
             resourceId: formData.get('resourceId') as string,
-            startTime: formData.get('startTime') as string,
-            endTime: formData.get('endTime') as string,
+            startTime,
+            endTime,
             requestedBy: formData.get('requestedBy') as string,
         }
 
@@ -71,16 +97,16 @@ const BookingForm = ({ onBookingCreated }: BookingFormProps) => {
         }
     };
 
-    const getDefaultStartTime = () => {
-        const now = new Date();
-        return now.toISOString().slice(0, 16);
-    };
+    // const getDefaultStartTime = () => {
+    //     const now = new Date();
+    //     return now.toISOString().slice(0, 16);
+    // };
 
-    const getDefaultEndTime = () => {
-        const now = new Date();
-        now.setHours(now.getHours() + 1); // Default 1 hour duration
-        return now.toISOString().slice(0, 16);
-    };
+    // const getDefaultEndTime = () => {
+    //     const now = new Date();
+    //     now.setHours(now.getHours() + 1); // Default 1 hour duration
+    //     return now.toISOString().slice(0, 16);
+    // };
 
 
     return (

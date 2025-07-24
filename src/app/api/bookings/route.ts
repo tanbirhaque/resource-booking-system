@@ -10,6 +10,11 @@ export async function POST(req: NextRequest) {
     const start = new Date(startTime)
     const end = new Date(endTime)
 
+    console.log({
+        startTime: start,
+        endTime: end,
+    });
+
     // 🛡 Basic Validations
     if (end <= start) {
         return NextResponse.json({ error: 'End time must be after start time.' }, { status: 400 })

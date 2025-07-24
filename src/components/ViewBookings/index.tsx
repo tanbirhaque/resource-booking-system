@@ -60,6 +60,7 @@ const ViewBookings = ({ refreshTrigger }: BookingDashboardProps) => {
         setFilters({ resource: '', date: '' });
     };
 
+    // const formatDateTime = (isoString: string) => {
     const formatDateTime = (isoString: string) => {
         return new Date(isoString).toLocaleString('en-US', {
             month: 'short',
@@ -67,8 +68,11 @@ const ViewBookings = ({ refreshTrigger }: BookingDashboardProps) => {
             hour: 'numeric',
             minute: '2-digit',
             hour12: true,
+            timeZone: 'UTC',
+            // timeZoneName: 'short',
         });
     };
+
 
     // Group bookings by resource
     const groupedBookings = bookings.reduce((acc, booking) => {
